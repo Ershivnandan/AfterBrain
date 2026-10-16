@@ -11,6 +11,7 @@ from src.audio.lipsync import LipSyncEngine
 from src.bridge.dispatcher import AEBridgeDispatcher
 from src.worker.ollama_client import OllamaWorkerClient
 from src.extendscript.validator import ExtendScriptValidator
+from src.bridge.project_scanner import ProjectScanner
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("anmcp")
@@ -219,6 +220,18 @@ def ae_run_raw_extendscript(jsx_code: str) -> str:
 
     exec_result = dispatcher.dispatch(cleaned, script_name_prefix="raw_script")
     return json.dumps(exec_result, indent=2)
+
+
+@app.tool()
+def ae_scan_project_assets() -> str:
+    """
+    Directly scans the active Adobe After Effects Project Panel for all imported footage assets.
+    Automatically detects landmarks on imported character images, creates puppet rigs,
+    and registers characters in memory without manual file path input.
+    """
+    scanner = ProjectScanner(dispatcher=dispatcher, memory=memory, detector=detector)
+    result = scanner.auto_register_imported_characters()
+    return json.dumps(result, indent=2)
 
 
 if __name__ == "__main__":

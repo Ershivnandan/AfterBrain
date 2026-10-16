@@ -14,6 +14,9 @@ from src.character.rig_builder import CharacterRigBuilder
 from src.audio.lipsync import LipSyncEngine
 from src.bridge.dispatcher import AEBridgeDispatcher
 from src.worker.ollama_client import OllamaWorkerClient
+from src.bridge.project_scanner import ProjectScanner
+from src.bridge.api_server import start_api_server
+from src.bridge.panel_installer import install_afterbrain_panel
 
 import sys
 
@@ -181,7 +184,22 @@ def interactive_register_wizard(
 
 
 def main():
+    # 1. Automatically configure & install AfterBrain.jsx into detected After Effects versions
+    try:
+        installed_panels = install_afterbrain_panel()
+    except Exception:
+        installed_panels = []
+
+    # 2. Automatically start local API server for the After Effects ScriptUI panel
+    try:
+        start_api_server(8088)
+    except Exception:
+        pass
+
     display_welcome()
+    if installed_panels:
+        console.print(f"[bold green]✓ After Effects AI Chat Panel installed in {len(installed_panels)} location(s)![/bold green] (AE Menu: [cyan]Window > AfterBrain.jsx[/cyan])\n")
+
     memory = CharacterMemory()
     detector = LandmarkDetector()
     dispatcher = AEBridgeDispatcher()
@@ -190,6 +208,7 @@ def main():
     show_status(dispatcher, worker, memory)
 
     console.print("\n[bold yellow]Available Commands:[/bold yellow]")
+    console.print("  [cyan]scan[/cyan]                         - Auto-scan & auto-rig all footage from AE Project Panel (zero typing!)")
     console.print("  [cyan]register[/cyan]                     - Launch interactive Character Onboarding Wizard")
     console.print("  [cyan]register <image_path> [name][/cyan] - Quick register with image")
     console.print("  [cyan]list[/cyan]                         - View all registered characters & acting traits")
@@ -211,6 +230,25 @@ def main():
 
             if user_input.lower() == "status":
                 show_status(dispatcher, worker, memory)
+                continue
+
+            if user_input.lower() in ("scan", "scan-assets", "sync"):
+                console.print("[cyan]🔍 Scanning Adobe After Effects Project Panel for imported assets...[/cyan]")
+                scanner = ProjectScanner(dispatcher=dispatcher, memory=memory, detector=detector)
+                res = scanner.auto_register_imported_characters()
+                if res.get("status") == "success":
+                    reg = res.get("registered_characters", [])
+                    if reg:
+                        console.print(f"[bold green]✓ Successfully auto-registered {len(reg)} character(s) from After Effects Project Panel![/bold green]")
+                        for r in reg:
+                            console.print(f"  • [bold cyan]{r['name']}[/bold cyan] ({r['file']}) - Rigged with puppet pins!")
+                    else:
+                        console.print("[yellow]No new image footage found in the After Effects Project Panel. Import an image into After Effects and run 'scan' again![/yellow]")
+                    if res.get("errors"):
+                        for err in res["errors"]:
+                            console.print(f"  [red]Warning for {err['file']}: {err['error']}[/red]")
+                else:
+                    console.print(f"[red]Scan failed: {res}[/red]")
                 continue
 
             if user_input.lower() == "list":

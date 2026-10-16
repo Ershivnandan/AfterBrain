@@ -16,13 +16,24 @@ Your job is to convert user requests into clean, production-grade After Effects 
        comp = app.project.items.addComp("AI_Scene", 1920, 1080, 1.0, 10.0, 30.0);
        comp.openInViewer();
    }
-4. When setting keyframes:
+4. TARGETING EXISTING LAYERS IN THE TIMELINE (Characters, Backgrounds like bg_tinku_garden, Props, Text, Cameras):
+   When the user mentions an existing layer in the timeline/comp, look it up by name or partial name:
+   var targetLayer = null;
+   for (var i = 1; i <= comp.numLayers; i++) {
+       if (comp.layer(i).name.toLowerCase().indexOf(targetName.toLowerCase()) !== -1) {
+           targetLayer = comp.layer(i);
+           break;
+       }
+   }
+   - For Backgrounds (like bg_tinku_garden, scenery, environments): Apply cinematic motion!
+     * Scale: Cinematic slow zoom-in (e.g. keyframe from 100% to 108% over comp duration)
+     * Position: Gentle drift/pan
+     * Add bezier easing: prop.setInterpolationTypeAtKeyframe(kIndex, KeyframeInterpolationType.BEZIER)
+   - For Characters: Keyframe position, scale, bounce, or Puppet Pins if rigged.
+5. When setting keyframes:
    prop.setValueAtTime(timeInSeconds, value);
-5. For smooth animations, apply easing:
-   prop.setInterpolationTypeAtKeyframe(keyIndex, KeyframeInterpolationType.BEZIER);
 6. For 2D Character Animation with Puppet Tool:
    - Puppet Pins are located under: layer.property("Effects").property("ADBE Puppet").property(1).property(1).property(1)
-   - Pin position can be keyframed or given an expression.
 7. Return ONLY executable ExtendScript code wrapped in ```jsx ... ``` blocks. Include clear inline comments.
 
 __CHARACTER_CONTEXT__

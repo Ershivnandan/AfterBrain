@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AfterBrain AI — Gemini Live Copilot for After Effects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="gemini-theme">
+  <!-- Ambient Gradient Aura -->
+  <div class="ambient-glow glow-top"></div>
+  <div class="ambient-glow glow-bottom"></div>
+
+  <div class="app-container">
+    <!-- Top Bar -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="gemini-sparkle">✦</div>
+        <div class="brand-text">
+          <h1>AfterBrain <span class="gradient-text">Live</span></h1>
+          <p class="subtitle">Autonomous AI Motion Copilot for Adobe After Effects</p>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div class="status-pill connected" id="aeStatusPill">
+          <span class="status-dot"></span>
+          <span id="aeStatusText">AE Bridge: Connected</span>
+        </div>
+        <div class="status-pill model-pill">
+          <span class="sparkle-icon">✨</span>
+          <span>qwen3:8b (Ollama)</span>
+        </div>
+        <button class="btn-refresh-assets" id="btnRefreshAssets" title="Sync Project Bin">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Sync AE Assets
+        </button>
+      </div>
+    </header>
+
+    <!-- Project Assets Bin Drawer -->
+    <section class="assets-drawer">
+      <div class="drawer-header">
+        <div class="drawer-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>Active AE Project Assets</span>
+          <span class="asset-count" id="assetCountBadge">0 assets</span>
+        </div>
+        <span class="drawer-hint">Click any asset or type <code>@name</code> in chat to target & describe it</span>
+      </div>
+
+      <div class="assets-scroll-track" id="assetsTrack">
+        <div class="loading-assets">
+          <span class="spinner"></span> Scanning After Effects Project Panel...
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Chat Stream -->
+    <main class="chat-viewport" id="chatViewport">
+      <div class="chat-messages" id="chatMessages">
+        <!-- Initial Welcome Card -->
+        <div class="message-card assistant welcome-card">
+          <div class="avatar-col">
+            <div class="gemini-avatar">✦</div>
+          </div>
+          <div class="content-col">
+            <div class="sender-name">AfterBrain Copilot <span class="badge-gemini">LIVE</span></div>
+            <div class="message-body">
+              <p>Hello! I am your real-time <strong>AI Motion Copilot</strong> connected directly to your active After Effects session.</p>
+              <div class="feature-highlights">
+                <div class="feature-item">
+                  <span class="f-icon">🏷️</span>
+                  <div><strong>@Tag Project Assets</strong>: Any image imported into your AE Project Panel appears above. Tag them like <code>@AlienBob is our goofy alien hero</code>.</div>
+                </div>
+                <div class="feature-item">
+                  <span class="f-icon">🎭</span>
+                  <div><strong>Landmark Puppet Rigging</strong>: Vision landmarks are automatically detected and mapped to Puppet pins in your comp.</div>
+                </div>
+                <div class="feature-item">
+                  <span class="f-icon">⚡</span>
+                  <div><strong>Live Keyframe Generation</strong>: Ask in natural language to wave, dance, lip-sync, or animate kinetic typography!</div>
+                </div>
+              </div>
+              <p class="try-prompt">Try clicking a suggestion below or typing <code>@</code> to mention an asset:</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Quick Suggestion Pills -->
+    <div class="suggestion-chips" id="suggestionChips">
+      <button class="chip" data-prompt="Scan all imported assets in After Effects Project panel">
+        <span>🔍</span> Scan AE Bin
+      </button>
+      <button class="chip" data-prompt="Make @AlienBob wave his right hand and bounce enthusiastically">
+        <span>👋</span> @AlienBob Wave & Bounce
+      </button>
+      <button class="chip" data-prompt="Lip sync dialogue for @AlienBob: Welcome to AfterBrain live AI animation!">
+        <span>🗣️</span> Lip-Sync Dialogue
+      </button>
+      <button class="chip" data-prompt="Create a cinematic 3D kinetic typography title with glowing cyan neon">
+        <span>✨</span> Kinetic Typography
+      </button>
+      <button class="chip" data-prompt="Animate a smooth camera zoom push-in on the composition">
+        <span>🎥</span> Camera Zoom
+      </button>
+    </div>
+
+    <!-- Input Bar & Autocomplete -->
+    <footer class="app-footer">
+      <!-- Tag Autocomplete Floating Menu -->
+      <div class="autocomplete-menu" id="autocompleteMenu" style="display: none;">
+        <div class="menu-header">Project Assets (Press Tab/Enter to select)</div>
+        <div class="menu-items" id="autocompleteItems"></div>
+      </div>
+
+      <div class="input-container">
+        <div class="input-wrapper">
+          <textarea
+            id="chatInput"
+            class="chat-textarea"
+            placeholder="Ask AfterBrain to animate, or type @ to mention an asset... (e.g. Make @AlienBob smile and wave)"
+            rows="1"
+          ></textarea>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-tag" id="btnQuickTag" title="Mention an asset">
+            <span>@</span>
+          </button>
+          <button class="btn-send" id="btnSend" title="Send (Enter)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="footer-note">Press <strong>Enter</strong> to send • <strong>Shift + Enter</strong> for new line • Powered by local Ollama & After Effects Bridge</div>
+    </footer>
+  </div>
+
+  <!-- Asset Description Modal -->
+  <div class="modal-overlay" id="tagModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalTagTitle">Describe Asset @Name</h3>
+        <button class="btn-close" id="btnModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-sub">Tell AfterBrain what this asset represents in your animation:</p>
+        
+        <label>Asset Role</label>
+        <select id="modalRoleSelect" class="form-input">
+          <option value="Character" selected>Character / Actor (Rig with Puppet Pins)</option>
+          <option value="Background">Background / Scenery (Layer Transform)</option>
+          <option value="Prop">Prop / Object (Layer Transform)</option>
+        </select>
+
+        <label>Visual Description & Personality</label>
+        <textarea id="modalDescInput" class="form-input" rows="3" placeholder="e.g. Goofy green alien with big eyes, protagonist of the scene. Enthusiastic and hyperactive."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="btnModalCancel">Cancel</button>
+        <button class="btn-primary" id="btnModalSave">✦ Save & Rig Asset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
