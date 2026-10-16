@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - feat/*
+      - fix/*
 
 jobs:
   test:
@@ -32,4 +33,4 @@ jobs:
 
       - name: Run Test Suite
         run: |
-          pytest -v -k "not test_ollama_connection and not test_e2e_mcp_character_lifecycle"
+          pytest -v -m "not ollama"

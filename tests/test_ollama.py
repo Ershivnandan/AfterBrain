@@ -2,6 +2,7 @@ import pytest
 from src.worker.ollama_client import OllamaWorkerClient
 
 
+@pytest.mark.ollama
 def test_ollama_connection():
     worker = OllamaWorkerClient()
     conn_info = worker.check_connection()
