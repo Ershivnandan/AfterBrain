@@ -1,8 +1,9 @@
 [project]
-name = "anmcp"
+name = "afterbrain"
 version = "0.1.0"
-description = "MCP Server and AI Worker connecting local Qwen (via Ollama) to Adobe After Effects for character animation and motion graphics."
-authors = [{ name = "AnMCP Team" }]
+description = "Local AI Worker & MCP Server for Adobe After Effects: 2D Character Rigging, Lip-Sync & Motion Graphics."
+authors = [{ name = "Shivnandan Soni", email = "shivnandansoni64@gmail.com" }]
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=1.28.0",
