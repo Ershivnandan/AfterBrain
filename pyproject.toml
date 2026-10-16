@@ -31,3 +31,6 @@ build-backend = "setuptools.build_meta"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "ollama: tests requiring a running local Ollama daemon",
+]
