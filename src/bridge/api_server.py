@@ -16,33 +16,14 @@ from src.bridge.project_scanner import ProjectScanner
 logger = logging.getLogger(__name__)
 
 
-from pathlib import Path
-from src.config import settings
-
-WEB_DIR = settings.project_root / "src" / "web"
-
-
 class AfterBrainHTTPHandler(BaseHTTPRequestHandler):
-    """Handles REST API and Web UI requests for the After Effects AI Live Copilot."""
+    """Handles REST API for the After Effects AI Live Copilot."""
 
     memory = CharacterMemory()
     detector = LandmarkDetector()
     dispatcher = AEBridgeDispatcher()
     worker = OllamaWorkerClient(memory=memory)
     scanner = ProjectScanner(dispatcher=dispatcher, memory=memory, detector=detector)
-
-    def _send_file(self, file_path: Path, content_type: str):
-        if file_path.exists():
-            with open(file_path, "rb") as f:
-                content = f.read()
-            self.send_response(200)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(content)))
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(content)
-        else:
-            self._send_json(404, {"error": "File not found"})
 
     def _send_json(self, status_code: int, data: dict):
         body = json.dumps(data).encode("utf-8")
@@ -68,13 +49,7 @@ class AfterBrainHTTPHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        if path in ["/", "/index.html"]:
-            self._send_file(WEB_DIR / "index.html", "text/html; charset=utf-8")
-        elif path == "/style.css":
-            self._send_file(WEB_DIR / "style.css", "text/css; charset=utf-8")
-        elif path == "/app.js":
-            self._send_file(WEB_DIR / "app.js", "application/javascript; charset=utf-8")
-        elif path == "/api/status":
+        if path == "/api/status":
             ollama_status = self.worker.check_connection()
             bridge_status = self.dispatcher.get_status()
             characters = self.memory.list_characters()

@@ -1,5 +1,6 @@
-// AfterBrain.jsx - Native Responsive AI Live Chat Copilot for Adobe After Effects
-// Built for 100% inside-AE live chat, asset tagging, and responsive width/height docking.
+// AfterBrain.jsx - Windows Copilot Chat UI for Adobe After Effects
+// Features: AI on Left side, Sender (User) on Right side, native ScriptUI cards,
+// auto-scrolling, zero cursor/selection bugs, and deep After Effects composition control.
 
 (function(thisObj) {
     // Close existing standalone palette window if already open to prevent duplicate stacking
@@ -8,94 +9,192 @@
     }
 
     function buildUI(thisObj) {
-        var win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "AfterBrain AI Live Chat", undefined, {resizeable: true});
+        var win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "Copilot - Motion AI", undefined, {resizeable: true});
         if (win !== null) {
             win.orientation = "column";
             win.alignChildren = ["fill", "fill"];
             win.spacing = 6;
             win.margins = 8;
 
-            // 1. Header Bar (Responsive top)
+            // 1. Windows Copilot Header Bar
             var header = win.add("group");
             header.orientation = "row";
             header.alignment = ["fill", "top"];
+            header.spacing = 6;
 
-            var title = header.add("statictext", undefined, "🧠 AfterBrain Live Copilot");
+            var copilotTitle = header.add("statictext", undefined, "✦ Copilot");
             try {
-                title.graphics.font = ScriptUI.newFont("Arial", "BOLD", 13);
+                copilotTitle.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 14);
+                copilotTitle.graphics.foregroundColor = copilotTitle.graphics.newPen(copilotTitle.graphics.PenType.SOLID_COLOR, [0.15, 0.55, 0.95, 1], 1);
+            } catch(e) {
+                try {
+                    copilotTitle.graphics.font = ScriptUI.newFont("Arial", "BOLD", 13);
+                } catch(e2) {}
+            }
+
+            var subTitle = header.add("statictext", undefined, "Motion AI");
+            try {
+                subTitle.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
             } catch(e) {}
 
             var statusTxt = header.add("statictext", undefined, "● Online (qwen3:8b)");
             statusTxt.alignment = ["right", "center"];
+            try {
+                statusTxt.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
+                statusTxt.graphics.foregroundColor = statusTxt.graphics.newPen(statusTxt.graphics.PenType.SOLID_COLOR, [0.2, 0.8, 0.4, 1], 1);
+            } catch(e) {}
 
-            // 2. Active Project Assets Bar
+            // 2. Active Layer / Project Asset Context Bar
             var assetGroup = win.add("group");
             assetGroup.orientation = "row";
             assetGroup.alignment = ["fill", "top"];
             assetGroup.spacing = 4;
 
-            var assetLbl = assetGroup.add("statictext", undefined, "Project Assets:");
-            var assetDropdown = assetGroup.add("dropdownlist", undefined, ["(Click 'Scan' to list assets)"]);
+            var assetLbl = assetGroup.add("statictext", undefined, "Layer Context:");
+            try {
+                assetLbl.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
+            } catch(e) {}
+
+            var assetDropdown = assetGroup.add("dropdownlist", undefined, ["(Click 'Scan' to list project layers)"]);
             assetDropdown.alignment = ["fill", "center"];
             assetDropdown.selection = 0;
 
             var refreshBtn = assetGroup.add("button", undefined, "↻ Sync");
             refreshBtn.preferredSize.width = 50;
 
-            // 3. Responsive Live Chat Stream (Listbox ensures NO text-selection bugs, NO copy cursor, and instant button clicks!)
-            var chatList = win.add("listbox", undefined, [], {multiline: false});
-            chatList.alignment = ["fill", "fill"];
-            chatList.minimumSize = [180, 140];
+            // 3. Copilot Chat Viewport (AI on Left, Sender on Right)
+            var chatViewport = win.add("group");
+            chatViewport.orientation = "row";
+            chatViewport.alignment = ["fill", "fill"];
+            chatViewport.spacing = 2;
 
-            function addLogItems(items) {
-                for (var i = 0; i < items.length; i++) {
-                    chatList.add("item", items[i]);
-                }
+            var chatScrollContainer = chatViewport.add("group");
+            chatScrollContainer.orientation = "column";
+            chatScrollContainer.alignment = ["fill", "fill"];
+            chatScrollContainer.alignChildren = ["fill", "top"];
+            chatScrollContainer.spacing = 8;
+
+            var scrollbar = chatViewport.add("scrollbar");
+            scrollbar.alignment = ["right", "fill"];
+            scrollbar.preferredSize.width = 14;
+            scrollbar.visible = false;
+
+            function getTimeString() {
+                var d = new Date();
+                var h = (d.getHours() < 10 ? "0" : "") + d.getHours();
+                var m = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
+                return h + ":" + m;
             }
 
-            // Initial welcome guidance
-            addLogItems([
-                "✦ [AfterBrain AI Live Motion Copilot connected]",
-                "1. Drag & drop character or background into After Effects.",
-                "2. Click '↻ Sync' or '🔍 Scan' to index layers.",
-                "3. Tag any asset: '@AlienBob is our funny alien hero'.",
-                "4. Animate: 'Animate bg_tinku_garden with slow zoom' or 'Make @AlienBob wave'.",
-                "─────────────────────────────────────────────────────────────"
-            ]);
-
-            // Helper to append message cleanly to listbox without text selection bugs
-            function appendChat(sender, msg) {
-                var time = new Date();
-                var timeStr = (time.getHours() < 10 ? "0" : "") + time.getHours() + ":" + (time.getMinutes() < 10 ? "0" : "") + time.getMinutes();
-                var headerItem = chatList.add("item", "[" + sender + " " + timeStr + "]");
-                
-                var cleanLines = msg.split("\n");
-                for (var i = 0; i < cleanLines.length; i++) {
-                    var line = cleanLines[i].replace(/^\s+|\s+$/g, "");
-                    if (line.length > 0) {
-                        chatList.add("item", "  " + line);
-                    }
-                }
-                chatList.add("item", " "); // spacing separator
-
-                // Auto-scroll to latest item
-                try {
-                    chatList.revealItem(chatList.items[chatList.items.length - 1]);
-                } catch(e) {}
-
-                // Keep input field ready
-                try {
-                    inputField.active = true;
-                } catch(e) {}
-
-                // Immediate After Effects UI repaint
+            function updateScroll() {
                 try {
                     win.layout.layout(true);
-                    app.redraw();
+                    var contentHeight = chatScrollContainer.preferredSize.height;
+                    var viewHeight = chatViewport.size.height;
+                    if (contentHeight > viewHeight && viewHeight > 0) {
+                        scrollbar.visible = true;
+                        scrollbar.minvalue = 0;
+                        scrollbar.maxvalue = Math.max(0, contentHeight - viewHeight + 20);
+                        scrollbar.value = scrollbar.maxvalue; // auto scroll to newest message
+                        chatScrollContainer.location = [0, -scrollbar.value];
+                    } else {
+                        scrollbar.visible = false;
+                        chatScrollContainer.location = [0, 0];
+                    }
                 } catch(e) {}
             }
 
-            // 4. Quick Action Chips (Responsive bottom group)
+            scrollbar.onChanging = function() {
+                chatScrollContainer.location = [0, -this.value];
+            };
+            scrollbar.onChange = function() {
+                chatScrollContainer.location = [0, -this.value];
+            };
+
+            // Add Copilot chat card (AI on LEFT, Sender on RIGHT)
+            function addMessage(sender, text, isAi) {
+                var row = chatScrollContainer.add("group");
+                row.orientation = "row";
+                row.alignment = ["fill", "top"];
+
+                var availWidth = Math.max(180, chatViewport.size.width || 340);
+                var maxBubbleW = Math.max(160, Math.floor(availWidth * 0.82));
+
+                if (isAi) {
+                    // AI Copilot message aligned to the LEFT
+                    row.alignChildren = ["left", "top"];
+
+                    var aiCard = row.add("panel", undefined, "");
+                    aiCard.orientation = "column";
+                    aiCard.alignChildren = ["left", "top"];
+                    aiCard.margins = [10, 6, 10, 8];
+                    aiCard.spacing = 3;
+                    aiCard.maximumSize.width = maxBubbleW;
+
+                    var aiHeader = aiCard.add("statictext", undefined, "✦ Copilot 🤖  " + getTimeString());
+                    try {
+                        aiHeader.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 10);
+                        aiHeader.graphics.foregroundColor = aiHeader.graphics.newPen(aiHeader.graphics.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
+                    } catch(e) {}
+
+                    var lines = text.split("\n");
+                    for (var i = 0; i < lines.length; i++) {
+                        var l = lines[i].replace(/^\s+|\s+$/g, "");
+                        if (l.length > 0) {
+                            var aiLine = aiCard.add("statictext", undefined, l, {multiline: true});
+                            aiLine.maximumSize.width = maxBubbleW - 20;
+                        }
+                    }
+                } else {
+                    // Sender / User message aligned to the RIGHT
+                    row.alignChildren = ["right", "top"];
+
+                    var userCard = row.add("panel", undefined, "");
+                    userCard.orientation = "column";
+                    userCard.alignChildren = ["right", "top"];
+                    userCard.margins = [10, 6, 10, 8];
+                    userCard.spacing = 3;
+                    userCard.maximumSize.width = maxBubbleW;
+
+                    var userHeader = userCard.add("statictext", undefined, "You 👤  " + getTimeString());
+                    try {
+                        userHeader.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 10);
+                        userHeader.graphics.foregroundColor = userHeader.graphics.newPen(userHeader.graphics.PenType.SOLID_COLOR, [0.3, 0.85, 0.6, 1], 1);
+                    } catch(e) {}
+
+                    var uLines = text.split("\n");
+                    for (var j = 0; j < uLines.length; j++) {
+                        var ul = uLines[j].replace(/^\s+|\s+$/g, "");
+                        if (ul.length > 0) {
+                            var userLine = userCard.add("statictext", undefined, ul, {multiline: true});
+                            userLine.maximumSize.width = maxBubbleW - 20;
+                        }
+                    }
+                }
+
+                updateScroll();
+
+                try {
+                    app.redraw();
+                } catch(e) {}
+
+                return row;
+            }
+
+            // Initial Copilot Welcome Card on the LEFT
+            function resetChat() {
+                while (chatScrollContainer.children.length > 0) {
+                    chatScrollContainer.remove(chatScrollContainer.children[0]);
+                }
+                addMessage("✦ Copilot", "Welcome to AfterBrain Copilot! I have direct control over your After Effects composition.\n\n" +
+                    "• Animate backgrounds: 'Animate bg_tinku_garden with cinematic slow zoom'\n" +
+                    "• Animate characters: 'Make @AlienBob wave and jump'\n" +
+                    "• Control cameras & typography with natural language.", true);
+            }
+
+            resetChat();
+
+            // 4. Copilot Suggestion Action Chips
             var chipsGroup = win.add("group");
             chipsGroup.orientation = "row";
             chipsGroup.alignment = ["fill", "bottom"];
@@ -105,9 +204,9 @@
             var chipTag = chipsGroup.add("button", undefined, "🏷️ Tag");
             var chipWave = chipsGroup.add("button", undefined, "👋 Wave");
             var chipLip = chipsGroup.add("button", undefined, "🗣️ Lip-Sync");
-            var chipClear = chipsGroup.add("button", undefined, "🧹 Clear");
+            var chipClear = chipsGroup.add("button", undefined, "🧹 New Topic");
 
-            // 5. Input Bar & Send Button (Responsive bottom)
+            // 5. Copilot Input Bar & Send Button
             var inputGroup = win.add("group");
             inputGroup.orientation = "row";
             inputGroup.alignment = ["fill", "bottom"];
@@ -194,11 +293,12 @@
                 userMsg = userMsg.replace(/^\s+|\s+$/g, "");
                 if (!userMsg) return;
 
-                appendChat("You 👤", userMsg);
+                // Add Sender message to RIGHT
+                addMessage("You", userMsg, false);
                 inputField.text = "";
 
-                // Immediate visual feedback in After Effects UI
-                appendChat("AfterBrain 🤖", "⏳ Thinking & applying in After Effects...");
+                // Immediate visual feedback on LEFT
+                var pendingRow = addMessage("✦ Copilot", "⏳ Thinking & applying in After Effects...", true);
 
                 try {
                     var socket = new Socket();
@@ -222,22 +322,31 @@
                         }
                         socket.close();
 
+                        // Remove pending card
+                        try {
+                            chatScrollContainer.remove(pendingRow);
+                        } catch(e) {}
+
                         var cleanReply = extractJsonReply(response);
                         if (cleanReply) {
-                            appendChat("AfterBrain 🤖", cleanReply);
+                            addMessage("✦ Copilot", cleanReply, true);
                         } else {
-                            appendChat("AfterBrain 🤖", response || "Execution finished in active composition.");
+                            addMessage("✦ Copilot", response || "Execution finished in active composition.", true);
                         }
 
                         // Refresh asset tags
                         syncAssets();
                     } else {
-                        appendChat("AfterBrain 🤖", "⚠️ Could not connect to AfterBrain background server on 127.0.0.1:8088.\n" +
-                            "Please ensure python -m src.cli is running in your terminal!");
+                        try { chatScrollContainer.remove(pendingRow); } catch(e) {}
+                        addMessage("✦ Copilot", "⚠️ Could not connect to AfterBrain background server on 127.0.0.1:8088.\n" +
+                            "Please ensure python -m src.cli is running in your terminal!", true);
                     }
                 } catch(err) {
-                    appendChat("AfterBrain 🤖", "⚠️ Connection error: " + err.toString());
+                    try { chatScrollContainer.remove(pendingRow); } catch(e) {}
+                    addMessage("✦ Copilot", "⚠️ Connection error: " + err.toString(), true);
                 }
+
+                try { inputField.active = true; } catch(e) {}
             }
 
             // Event Handlers
@@ -287,15 +396,7 @@
             };
 
             chipClear.onClick = function() {
-                chatList.removeAll();
-                addLogItems([
-                    "✦ [AfterBrain AI Live Motion Copilot connected]",
-                    "1. Drag & drop character or background into After Effects.",
-                    "2. Click '↻ Sync' or '🔍 Scan' to index layers.",
-                    "3. Tag any asset: '@AlienBob is our funny alien hero'.",
-                    "4. Animate: 'Animate bg_tinku_garden with slow zoom' or 'Make @AlienBob wave'.",
-                    "─────────────────────────────────────────────────────────────"
-                ]);
+                resetChat();
                 try {
                     inputField.active = true;
                 } catch(e) {}
@@ -304,9 +405,11 @@
             // Responsive Layout Handling on Width/Height Resize
             win.onResizing = function() {
                 this.layout.resize();
+                updateScroll();
             };
             win.onResize = function() {
                 this.layout.resize();
+                updateScroll();
             };
 
             win.layout.layout(true);
