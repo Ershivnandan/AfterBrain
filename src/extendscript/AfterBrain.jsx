@@ -89,8 +89,16 @@
             function updateScroll() {
                 try {
                     win.layout.layout(true);
-                    var contentHeight = chatScrollContainer.preferredSize.height;
-                    var viewHeight = chatViewport.size.height;
+                    var contentHeight = (chatScrollContainer.preferredSize && chatScrollContainer.preferredSize.height) ? chatScrollContainer.preferredSize.height : 0;
+                    var viewHeight = 250;
+                    try {
+                        if (chatViewport.size && chatViewport.size.height > 0) {
+                            viewHeight = chatViewport.size.height;
+                        } else if (win.size && win.size.height > 0) {
+                            viewHeight = win.size.height - 180;
+                        }
+                    } catch(e) {}
+
                     if (contentHeight > viewHeight && viewHeight > 0) {
                         scrollbar.visible = true;
                         scrollbar.minvalue = 0;
@@ -117,7 +125,16 @@
                 row.orientation = "row";
                 row.alignment = ["fill", "top"];
 
-                var availWidth = Math.max(180, chatViewport.size.width || 340);
+                var viewW = 320;
+                try {
+                    if (chatViewport.size && chatViewport.size.width > 0) {
+                        viewW = chatViewport.size.width;
+                    } else if (win.size && win.size.width > 0) {
+                        viewW = win.size.width - 40;
+                    }
+                } catch(e) {}
+
+                var availWidth = Math.max(180, viewW);
                 var maxBubbleW = Math.max(160, Math.floor(availWidth * 0.82));
 
                 if (isAi) {
@@ -190,10 +207,6 @@
                     "• Animate backgrounds: 'Animate bg_tinku_garden with cinematic slow zoom'\n" +
                     "• Animate characters: 'Make @AlienBob wave and jump'\n" +
                     "• Control cameras & typography with natural language.", true);
-            }
-
-            resetChat();
-
             // 4. Copilot Suggestion Action Chips
             var chipsGroup = win.add("group");
             chipsGroup.orientation = "row";
@@ -413,6 +426,7 @@
             };
 
             win.layout.layout(true);
+            resetChat();
             syncAssets();
 
             // Store reference globally if palette window
