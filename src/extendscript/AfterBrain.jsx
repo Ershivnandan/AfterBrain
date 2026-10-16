@@ -1,6 +1,9 @@
-// AfterBrain.jsx - Windows Copilot Chat UI for Adobe After Effects
-// Features: AI on Left side, Sender (User) on Right side, native ScriptUI cards,
-// auto-scrolling, zero cursor/selection bugs, and deep After Effects composition control.
+// AfterBrain.jsx - AI Motion Copilot for Adobe After Effects
+// UI matches modern Dark Theme Copilot:
+// - Blue rounded bubbles on the RIGHT for user prompts
+// - Dark slate rounded bubbles on the LEFT for AI responses
+// - Responsive, scrollable message feed with auto-scroll and mouse wheel support
+// - Direct deep composition control via local Ollama worker
 
 (function(thisObj) {
     // Close existing standalone palette window if already open to prevent duplicate stacking
@@ -9,82 +12,81 @@
     }
 
     function buildUI(thisObj) {
-        var win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "Copilot - Motion AI", undefined, {resizeable: true});
+        var win = (thisObj instanceof Panel) ? thisObj : new Window("palette", "AnMCP AI Worker", undefined, {resizeable: true});
         if (win !== null) {
             win.orientation = "column";
             win.alignChildren = ["fill", "fill"];
             win.spacing = 6;
             win.margins = 8;
 
-            // 1. Windows Copilot Header Bar
-            var header = win.add("group");
-            header.orientation = "row";
-            header.alignment = ["fill", "top"];
-            header.spacing = 6;
-
-            var copilotTitle = header.add("statictext", undefined, "✦ Copilot");
             try {
-                copilotTitle.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 14);
-                copilotTitle.graphics.foregroundColor = copilotTitle.graphics.newPen(copilotTitle.graphics.PenType.SOLID_COLOR, [0.15, 0.55, 0.95, 1], 1);
+                win.graphics.backgroundColor = win.graphics.newBrush(win.graphics.BrushType.SOLID_COLOR, [0.11, 0.11, 0.11, 1]);
+            } catch(e) {}
+
+            // 1. Top Header Bar (Matching screenshot)
+            var topBar = win.add("group");
+            topBar.orientation = "row";
+            topBar.alignment = ["fill", "top"];
+            topBar.spacing = 6;
+
+            var titleTxt = topBar.add("statictext", undefined, "AnMCP AI Worker (Ollama qwen3:8b)");
+            try {
+                titleTxt.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 11);
+                titleTxt.graphics.foregroundColor = titleTxt.graphics.newPen(titleTxt.graphics.PenType.SOLID_COLOR, [0.88, 0.88, 0.88, 1], 1);
             } catch(e) {
                 try {
-                    copilotTitle.graphics.font = ScriptUI.newFont("Arial", "BOLD", 13);
+                    titleTxt.graphics.font = ScriptUI.newFont("Arial", "BOLD", 11);
                 } catch(e2) {}
             }
 
-            var subTitle = header.add("statictext", undefined, "Motion AI");
+            var statusIcon = topBar.add("statictext", undefined, "● Online");
+            statusIcon.alignment = ["right", "center"];
             try {
-                subTitle.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
+                statusIcon.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
+                statusIcon.graphics.foregroundColor = statusIcon.graphics.newPen(statusIcon.graphics.PenType.SOLID_COLOR, [0.25, 0.85, 0.45, 1], 1);
             } catch(e) {}
 
-            var statusTxt = header.add("statictext", undefined, "● Online (qwen3:8b)");
-            statusTxt.alignment = ["right", "center"];
+            // 2. Active Layer Context Bar
+            var contextBar = win.add("group");
+            contextBar.orientation = "row";
+            contextBar.alignment = ["fill", "top"];
+            contextBar.spacing = 4;
+
+            var contextLbl = contextBar.add("statictext", undefined, "Target Layer:");
             try {
-                statusTxt.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
-                statusTxt.graphics.foregroundColor = statusTxt.graphics.newPen(statusTxt.graphics.PenType.SOLID_COLOR, [0.2, 0.8, 0.4, 1], 1);
+                contextLbl.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
+                contextLbl.graphics.foregroundColor = contextLbl.graphics.newPen(contextLbl.graphics.PenType.SOLID_COLOR, [0.65, 0.65, 0.65, 1], 1);
             } catch(e) {}
 
-            // 2. Active Layer / Project Asset Context Bar
-            var assetGroup = win.add("group");
-            assetGroup.orientation = "row";
-            assetGroup.alignment = ["fill", "top"];
-            assetGroup.spacing = 4;
-
-            var assetLbl = assetGroup.add("statictext", undefined, "Layer Context:");
-            try {
-                assetLbl.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 10);
-            } catch(e) {}
-
-            var assetDropdown = assetGroup.add("dropdownlist", undefined, ["(Click 'Scan' to list project layers)"]);
+            var assetDropdown = contextBar.add("dropdownlist", undefined, ["(Auto-detect composition layers)"]);
             assetDropdown.alignment = ["fill", "center"];
             assetDropdown.selection = 0;
 
-            var refreshBtn = assetGroup.add("button", undefined, "↻ Sync");
-            refreshBtn.preferredSize.width = 50;
+            var syncBtn = contextBar.add("button", undefined, "↻ Sync");
+            syncBtn.preferredSize.width = 50;
 
-            // 3. Copilot Chat Viewport (AI on Left, Sender on Right)
-            var chatViewport = win.add("group");
-            chatViewport.orientation = "row";
+            // 3. Scrollable Chat Viewport (Matching screenshot)
+            var chatRow = win.add("group");
+            chatRow.orientation = "row";
+            chatRow.alignment = ["fill", "fill"];
+            chatRow.spacing = 2;
+
+            var chatViewport = chatRow.add("group");
+            chatViewport.orientation = "column";
             chatViewport.alignment = ["fill", "fill"];
-            chatViewport.spacing = 2;
+            chatViewport.alignChildren = ["fill", "top"];
 
             var chatScrollContainer = chatViewport.add("group");
             chatScrollContainer.orientation = "column";
-            chatScrollContainer.alignment = ["fill", "fill"];
+            chatScrollContainer.alignment = ["fill", "top"];
             chatScrollContainer.alignChildren = ["fill", "top"];
-            chatScrollContainer.spacing = 8;
+            chatScrollContainer.spacing = 10;
+            chatScrollContainer.margins = 4;
 
-            var scrollbar = chatViewport.add("scrollbar");
+            var scrollbar = chatRow.add("scrollbar");
             scrollbar.alignment = ["right", "fill"];
             scrollbar.preferredSize.width = 14;
             scrollbar.visible = false;
-
-            function getTimeString() {
-                var d = new Date();
-                var h = (d.getHours() < 10 ? "0" : "") + d.getHours();
-                var m = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
-                return h + ":" + m;
-            }
 
             function updateScroll() {
                 try {
@@ -95,15 +97,15 @@
                         if (chatViewport.size && chatViewport.size.height > 0) {
                             viewHeight = chatViewport.size.height;
                         } else if (win.size && win.size.height > 0) {
-                            viewHeight = win.size.height - 180;
+                            viewHeight = win.size.height - 140;
                         }
                     } catch(e) {}
 
                     if (contentHeight > viewHeight && viewHeight > 0) {
                         scrollbar.visible = true;
                         scrollbar.minvalue = 0;
-                        scrollbar.maxvalue = Math.max(0, contentHeight - viewHeight + 20);
-                        scrollbar.value = scrollbar.maxvalue; // auto scroll to newest message
+                        scrollbar.maxvalue = Math.max(0, contentHeight - viewHeight + 30);
+                        scrollbar.value = scrollbar.maxvalue; // auto scroll to newest
                         chatScrollContainer.location = [0, -scrollbar.value];
                     } else {
                         scrollbar.visible = false;
@@ -119,8 +121,18 @@
                 chatScrollContainer.location = [0, -this.value];
             };
 
-            // Add Copilot chat card (AI on LEFT, Sender on RIGHT)
-            function addMessage(sender, text, isAi) {
+            win.addEventListener("wheel", function(e) {
+                if (scrollbar.visible && scrollbar.maxvalue > 0) {
+                    var step = 30;
+                    var nextVal = scrollbar.value - (e.delta * step);
+                    nextVal = Math.max(0, Math.min(scrollbar.maxvalue, nextVal));
+                    scrollbar.value = nextVal;
+                    chatScrollContainer.location = [0, -nextVal];
+                }
+            });
+
+            // Add Chat Bubble (AI on Left, Sender on Right)
+            function addMessage(text, isAi) {
                 var row = chatScrollContainer.add("group");
                 row.orientation = "row";
                 row.alignment = ["fill", "top"];
@@ -135,56 +147,60 @@
                 } catch(e) {}
 
                 var availWidth = Math.max(180, viewW);
-                var maxBubbleW = Math.max(160, Math.floor(availWidth * 0.82));
+                var maxBubbleW = Math.max(160, Math.floor(availWidth * 0.80));
 
                 if (isAi) {
-                    // AI Copilot message aligned to the LEFT
+                    // AI Response Bubble on the LEFT (Dark Charcoal #2A2A2A)
                     row.alignChildren = ["left", "top"];
 
-                    var aiCard = row.add("panel", undefined, "");
-                    aiCard.orientation = "column";
-                    aiCard.alignChildren = ["left", "top"];
-                    aiCard.margins = [10, 6, 10, 8];
-                    aiCard.spacing = 3;
-                    aiCard.maximumSize.width = maxBubbleW;
+                    var aiBubble = row.add("panel", undefined, "");
+                    aiBubble.orientation = "column";
+                    aiBubble.alignChildren = ["left", "top"];
+                    aiBubble.margins = [14, 10, 14, 10];
+                    aiBubble.spacing = 2;
+                    aiBubble.maximumSize.width = maxBubbleW;
 
-                    var aiHeader = aiCard.add("statictext", undefined, "✦ Copilot 🤖  " + getTimeString());
                     try {
-                        aiHeader.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 10);
-                        aiHeader.graphics.foregroundColor = aiHeader.graphics.newPen(aiHeader.graphics.PenType.SOLID_COLOR, [0.2, 0.6, 1.0, 1], 1);
+                        aiBubble.graphics.backgroundColor = aiBubble.graphics.newBrush(aiBubble.graphics.BrushType.SOLID_COLOR, [0.20, 0.20, 0.20, 1]);
                     } catch(e) {}
 
-                    var lines = text.split("\n");
-                    for (var i = 0; i < lines.length; i++) {
-                        var l = lines[i].replace(/^\s+|\s+$/g, "");
+                    var cleanLines = text.split("\n");
+                    for (var i = 0; i < cleanLines.length; i++) {
+                        var l = cleanLines[i].replace(/^\s+|\s+$/g, "");
                         if (l.length > 0) {
-                            var aiLine = aiCard.add("statictext", undefined, l, {multiline: true});
-                            aiLine.maximumSize.width = maxBubbleW - 20;
+                            var aiTxt = aiBubble.add("statictext", undefined, l, {multiline: true});
+                            aiTxt.maximumSize.width = maxBubbleW - 24;
+                            try {
+                                aiTxt.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 11);
+                                aiTxt.graphics.foregroundColor = aiTxt.graphics.newPen(aiTxt.graphics.PenType.SOLID_COLOR, [0.93, 0.93, 0.93, 1], 1);
+                            } catch(e) {}
                         }
                     }
                 } else {
-                    // Sender / User message aligned to the RIGHT
+                    // Sender (User) Bubble on the RIGHT (Vivid Blue #1A73E8)
                     row.alignChildren = ["right", "top"];
 
-                    var userCard = row.add("panel", undefined, "");
-                    userCard.orientation = "column";
-                    userCard.alignChildren = ["right", "top"];
-                    userCard.margins = [10, 6, 10, 8];
-                    userCard.spacing = 3;
-                    userCard.maximumSize.width = maxBubbleW;
+                    var userBubble = row.add("panel", undefined, "");
+                    userBubble.orientation = "column";
+                    userBubble.alignChildren = ["left", "top"];
+                    userBubble.margins = [14, 10, 14, 10];
+                    userBubble.spacing = 2;
+                    userBubble.maximumSize.width = maxBubbleW;
 
-                    var userHeader = userCard.add("statictext", undefined, "You 👤  " + getTimeString());
                     try {
-                        userHeader.graphics.font = ScriptUI.newFont("Segoe UI", "BOLD", 10);
-                        userHeader.graphics.foregroundColor = userHeader.graphics.newPen(userHeader.graphics.PenType.SOLID_COLOR, [0.3, 0.85, 0.6, 1], 1);
+                        userBubble.graphics.backgroundColor = userBubble.graphics.newBrush(userBubble.graphics.BrushType.SOLID_COLOR, [0.10, 0.46, 0.90, 1]);
                     } catch(e) {}
 
                     var uLines = text.split("\n");
                     for (var j = 0; j < uLines.length; j++) {
                         var ul = uLines[j].replace(/^\s+|\s+$/g, "");
                         if (ul.length > 0) {
-                            var userLine = userCard.add("statictext", undefined, ul, {multiline: true});
-                            userLine.maximumSize.width = maxBubbleW - 20;
+                            var userTxt = userBubble.add("statictext", undefined, ul, {multiline: true});
+                            userTxt.maximumSize.width = maxBubbleW - 24;
+                            try {
+                                userTxt.graphics.font = ScriptUI.newFont("Segoe UI", "REGULAR", 11);
+                                userTxt.graphics.foregroundColor = userTxt.graphics.newPen(userTxt.graphics.PenType.SOLID_COLOR, [1, 1, 1, 1], 1);
+                            } catch(e) {}
                         }
                     }
                 }
@@ -198,18 +214,17 @@
                 return row;
             }
 
-            // Initial Copilot Welcome Card on the LEFT
             function resetChat() {
                 while (chatScrollContainer.children.length > 0) {
                     chatScrollContainer.remove(chatScrollContainer.children[0]);
                 }
-                addMessage("✦ Copilot", "Welcome to AfterBrain Copilot! I have direct control over your After Effects composition.\n\n" +
-                    "• Animate backgrounds: 'Animate bg_tinku_garden with cinematic slow zoom'\n" +
-                    "• Animate characters: 'Make @AlienBob wave and jump'\n" +
-                    "• Control cameras & typography with natural language.", true);
+                addMessage("Hello! I am your AI Motion Copilot.\n\n" +
+                    "• Animate scene: 'Animate bg_tinku_garden with slow zoom and pan'\n" +
+                    "• Animate characters: 'Make AlienBob wave his right hand and jump'\n" +
+                    "• Ask questions or control anything in your comp.", true);
             }
 
-            // 4. Copilot Suggestion Action Chips
+            // 4. Action Chips (Pill shortcuts)
             var chipsGroup = win.add("group");
             chipsGroup.orientation = "row";
             chipsGroup.alignment = ["fill", "bottom"];
@@ -219,20 +234,25 @@
             var chipTag = chipsGroup.add("button", undefined, "🏷️ Tag");
             var chipWave = chipsGroup.add("button", undefined, "👋 Wave");
             var chipLip = chipsGroup.add("button", undefined, "🗣️ Lip-Sync");
-            var chipClear = chipsGroup.add("button", undefined, "🧹 New Topic");
+            var chipClear = chipsGroup.add("button", undefined, "🧹 Clear");
 
-            // 5. Copilot Input Bar & Send Button
-            var inputGroup = win.add("group");
-            inputGroup.orientation = "row";
-            inputGroup.alignment = ["fill", "bottom"];
-            inputGroup.spacing = 6;
+            // 5. Input Bar & Send Button (Matching screenshot)
+            var inputWrapper = win.add("panel", undefined, "");
+            inputWrapper.orientation = "row";
+            inputWrapper.alignment = ["fill", "bottom"];
+            inputWrapper.margins = [6, 4, 6, 4];
+            inputWrapper.spacing = 6;
 
-            var inputField = inputGroup.add("edittext", undefined, "");
+            try {
+                inputWrapper.graphics.backgroundColor = inputWrapper.graphics.newBrush(inputWrapper.graphics.BrushType.SOLID_COLOR, [0.15, 0.15, 0.15, 1]);
+            } catch(e) {}
+
+            var inputField = inputWrapper.add("edittext", undefined, "");
             inputField.alignment = ["fill", "center"];
-            inputField.minimumSize = [120, 26];
+            inputField.minimumSize = [180, 26];
 
-            var sendBtn = inputGroup.add("button", undefined, "Send ➔");
-            sendBtn.preferredSize.width = 65;
+            var sendBtn = inputWrapper.add("button", undefined, "➤");
+            sendBtn.preferredSize.width = 38;
             sendBtn.preferredSize.height = 26;
 
             // Robust JSON string extractor
@@ -308,12 +328,12 @@
                 userMsg = userMsg.replace(/^\s+|\s+$/g, "");
                 if (!userMsg) return;
 
-                // Add Sender message to RIGHT
-                addMessage("You", userMsg, false);
+                // Add Sender message to RIGHT (Blue bubble)
+                addMessage(userMsg, false);
                 inputField.text = "";
 
-                // Immediate visual feedback on LEFT
-                var pendingRow = addMessage("✦ Copilot", "⏳ Thinking & applying in After Effects...", true);
+                // Immediate visual feedback on LEFT (Slate bubble)
+                var pendingRow = addMessage("⏳ Thinking & applying in After Effects...", true);
 
                 try {
                     var socket = new Socket();
@@ -344,21 +364,20 @@
 
                         var cleanReply = extractJsonReply(response);
                         if (cleanReply) {
-                            addMessage("✦ Copilot", cleanReply, true);
+                            addMessage(cleanReply, true);
                         } else {
-                            addMessage("✦ Copilot", response || "Execution finished in active composition.", true);
+                            addMessage(response || "Execution finished in active composition.", true);
                         }
 
                         // Refresh asset tags
                         syncAssets();
                     } else {
                         try { chatScrollContainer.remove(pendingRow); } catch(e) {}
-                        addMessage("✦ Copilot", "⚠️ Could not connect to AfterBrain background server on 127.0.0.1:8088.\n" +
-                            "Please ensure python -m src.cli is running in your terminal!", true);
+                        addMessage("⚠️ Could not connect to AfterBrain background server on 127.0.0.1:8088.\nPlease ensure python -m src.cli is running in your terminal!", true);
                     }
                 } catch(err) {
                     try { chatScrollContainer.remove(pendingRow); } catch(e) {}
-                    addMessage("✦ Copilot", "⚠️ Connection error: " + err.toString(), true);
+                    addMessage("⚠️ Connection error: " + err.toString(), true);
                 }
 
                 try { inputField.active = true; } catch(e) {}
@@ -383,7 +402,7 @@
                 }
             };
 
-            refreshBtn.onClick = function() {
+            syncBtn.onClick = function() {
                 syncAssets();
                 sendChatMessage("scan my project assets");
             };
@@ -402,7 +421,7 @@
 
             chipWave.onClick = function() {
                 var activeChar = (assetDropdown.selection && assetDropdown.selection.text.indexOf("@") === 0) ? assetDropdown.selection.text : "@AlienBob";
-                sendChatMessage("Make " + activeChar + " wave enthusiastically and bounce up and down");
+                sendChatMessage("Make " + activeChar + " wave his right hand and bounce up and down");
             };
 
             chipLip.onClick = function() {

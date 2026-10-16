@@ -107,22 +107,6 @@ class AfterBrainHTTPHandler(BaseHTTPRequestHandler):
 
             msg_lower = message.lower()
 
-            # 0. Conversational greetings / status checks
-            if msg_lower in ["hi", "hello", "hey", "are you working", "are you working ?", "are you there", "test", "status", "ping", "help"]:
-                chars = self.memory.list_characters()
-                char_str = ", ".join([f"@{c['name']}" for c in chars]) if chars else "None yet"
-                reply = (
-                    "👋 Hello! Yes, I am fully online and connected live to your After Effects session!\n\n"
-                    f"• Active Model: {self.worker.model}\n"
-                    f"• Tagged Characters in Memory: {char_str}\n\n"
-                    "How to use me:\n"
-                    "1. Import your character image into AE's Project Panel.\n"
-                    "2. Tell me: `@CharacterName is our goofy protagonist`\n"
-                    "3. Prompt me: `Make @CharacterName wave and bounce happily`!"
-                )
-                self._send_json(200, {"reply": reply, "status": "success"})
-                return
-
             # 1. Check if user is defining/tagging an asset directly in chat: e.g. "@AlienBob is a goofy alien"
             import re
             tag_def_match = re.search(r"@([a-zA-Z0-9_\.\-]+)\s+(?:is\s+(?:a|our|the)?|as\s+)\s*(.+)", message, re.IGNORECASE)
@@ -192,7 +176,7 @@ class AfterBrainHTTPHandler(BaseHTTPRequestHandler):
                 self._send_json(200, {"reply": reply, "status": "success", "execution": exec_res})
                 return
 
-            # Standard animation with Qwen
+            # Standard processing with Ollama AI worker
             res = self.worker.generate_extendscript(message, character_name=target_char)
             jsx = res.get("jsx_code", "")
             if jsx:
@@ -201,7 +185,9 @@ class AfterBrainHTTPHandler(BaseHTTPRequestHandler):
                 reply = f"🚀 **{target_char or 'Motion'}**: {explanation}\nExtendScript executed live in active composition!"
                 self._send_json(200, {"reply": reply, "status": "success", "jsx_code": jsx, "execution": exec_res})
             else:
-                self._send_json(200, {"reply": f"⚠️ Could not generate animation: {res.get('error', 'Unknown error')}", "status": "error"})
+                # Conversational AI response from Qwen
+                explanation = res.get("explanation") or res.get("error") or "Hello! I am your real-time AI Motion Copilot. How can I help you animate or build in After Effects?"
+                self._send_json(200, {"reply": explanation, "status": "success"})
 
         elif path == "/api/scan_assets":
             # Auto-scan all footage directly in the After Effects Project Panel!
