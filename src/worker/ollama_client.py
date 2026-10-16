@@ -60,6 +60,8 @@ class OllamaWorkerClient:
                     layer_name=char_info.get("layer_name", character_name),
                     rig_type=char_info.get("rig_type", "puppet_pins"),
                     pin_mapping=str(char_info.get("pin_mapping", {})),
+                    description=char_info.get("description", ""),
+                    personality=char_info.get("personality", ""),
                 )
             else:
                 user_content = f"Character '{character_name}' requested. User prompt: {user_prompt}"
@@ -107,13 +109,17 @@ class OllamaWorkerClient:
             return sorted(matches, key=len, reverse=True)[0].strip()
 
         # If no code fences, check if text contains ExtendScript keywords
-        if "app.beginUndoGroup" in text or "app.project" in text or "var comp" in text:
+        if any(kw in text for kw in ["app.beginUndoGroup", "app.project", "var comp", "comp.layer", "app.activeItem"]):
             return text.strip()
 
-        return text.strip()
+        return ""
 
     def _extract_explanation(self, text: str) -> str:
         """Removes code blocks to return just the conversational explanation."""
         cleaned = re.sub(r"```[\s\S]*?```", "", text).strip()
-        # Truncate if excessively long
+        if not cleaned:
+            first_comment = re.search(r"//\s*(.+)", text)
+            if first_comment:
+                return first_comment.group(1).strip()
+            return "Applied motion animation in active composition."
         return cleaned[:500] if len(cleaned) > 500 else cleaned

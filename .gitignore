@@ -4,6 +4,6 @@ __pycache__/
 *.pyo
 .env
 output_scripts/*.jsx
-data/character_registry.json
+data/*
 !data/.gitkeep
 .pytest_cache/

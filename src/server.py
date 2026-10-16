@@ -11,6 +11,7 @@ from src.audio.lipsync import LipSyncEngine
 from src.bridge.dispatcher import AEBridgeDispatcher
 from src.worker.ollama_client import OllamaWorkerClient
 from src.extendscript.validator import ExtendScriptValidator
+from src.bridge.project_scanner import ProjectScanner
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("anmcp")
@@ -47,12 +48,15 @@ def ae_get_system_status() -> str:
 def ae_register_character(
     image_path: str,
     character_name: str,
-    rig_type: str = "puppet_pins"
+    rig_type: str = "puppet_pins",
+    description: Optional[str] = "",
+    personality: Optional[str] = "",
+    role: Optional[str] = ""
 ) -> str:
     """
     Registers a new character image into After Effects.
     Uses computer vision to locate the mouth, eyes, hands, and joints,
-    automatically creates a Puppet Tool rig, and saves the character to memory.
+    automatically creates a Puppet Tool rig, and saves the character with personality traits to memory.
     """
     try:
         # 1. Vision Landmark Detection
@@ -70,7 +74,10 @@ def ae_register_character(
             image_path=image_path,
             landmarks=landmarks.to_dict()["landmarks"],
             rig_type=rig_type,
-            layer_name=character_name
+            layer_name=character_name,
+            description=description,
+            personality=personality,
+            role=role
         )
 
         response = {
@@ -213,6 +220,18 @@ def ae_run_raw_extendscript(jsx_code: str) -> str:
 
     exec_result = dispatcher.dispatch(cleaned, script_name_prefix="raw_script")
     return json.dumps(exec_result, indent=2)
+
+
+@app.tool()
+def ae_scan_project_assets() -> str:
+    """
+    Directly scans the active Adobe After Effects Project Panel for all imported footage assets.
+    Automatically detects landmarks on imported character images, creates puppet rigs,
+    and registers characters in memory without manual file path input.
+    """
+    scanner = ProjectScanner(dispatcher=dispatcher, memory=memory, detector=detector)
+    result = scanner.auto_register_imported_characters()
+    return json.dumps(result, indent=2)
 
 
 if __name__ == "__main__":

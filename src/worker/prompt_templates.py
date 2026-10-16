@@ -16,13 +16,24 @@ Your job is to convert user requests into clean, production-grade After Effects 
        comp = app.project.items.addComp("AI_Scene", 1920, 1080, 1.0, 10.0, 30.0);
        comp.openInViewer();
    }
-4. When setting keyframes:
+4. TARGETING EXISTING LAYERS IN THE TIMELINE (Characters, Backgrounds like bg_tinku_garden, Props, Text, Cameras):
+   When the user mentions an existing layer in the timeline/comp, look it up by name or partial name:
+   var targetLayer = null;
+   for (var i = 1; i <= comp.numLayers; i++) {
+       if (comp.layer(i).name.toLowerCase().indexOf(targetName.toLowerCase()) !== -1) {
+           targetLayer = comp.layer(i);
+           break;
+       }
+   }
+   - For Backgrounds (like bg_tinku_garden, scenery, environments): Apply cinematic motion!
+     * Scale: Cinematic slow zoom-in (e.g. keyframe from 100% to 108% over comp duration)
+     * Position: Gentle drift/pan
+     * Add bezier easing: prop.setInterpolationTypeAtKeyframe(kIndex, KeyframeInterpolationType.BEZIER)
+   - For Characters: Keyframe position, scale, bounce, or Puppet Pins if rigged.
+5. When setting keyframes:
    prop.setValueAtTime(timeInSeconds, value);
-5. For smooth animations, apply easing:
-   prop.setInterpolationTypeAtKeyframe(keyIndex, KeyframeInterpolationType.BEZIER);
 6. For 2D Character Animation with Puppet Tool:
    - Puppet Pins are located under: layer.property("Effects").property("ADBE Puppet").property(1).property(1).property(1)
-   - Pin position can be keyframed or given an expression.
 7. Return ONLY executable ExtendScript code wrapped in ```jsx ... ``` blocks. Include clear inline comments.
 
 __CHARACTER_CONTEXT__
@@ -33,10 +44,12 @@ Request: __USER_PROMPT__
 
 Target character details:
 - Layer Name in AE: __LAYER_NAME__
+- Description: __DESCRIPTION__
+- Personality / Acting Style: __PERSONALITY__
 - Rig Type: __RIG_TYPE__
 - Available Pins/Joints: __PIN_MAPPING__
 
-Write complete, valid ExtendScript (.jsx) that animates this character according to the request. Ensure proper keyframing or expressions are applied. Wrap everything in an undo group.
+Write complete, valid ExtendScript (.jsx) that animates this character according to the request and reflects their personality and acting style. Ensure proper keyframing or expressions are applied. Wrap everything in an undo group.
 """
 
     GENERAL_ANIMATION_TEMPLATE = """The user wants to create or animate elements in After Effects.
@@ -52,11 +65,22 @@ Return the code wrapped in ```jsx ... ```.
         return cls.SYSTEM_TEMPLATE.replace("__CHARACTER_CONTEXT__", character_context)
 
     @classmethod
-    def get_character_prompt(cls, character_name: str, user_prompt: str, layer_name: str, rig_type: str, pin_mapping: str) -> str:
+    def get_character_prompt(
+        cls,
+        character_name: str,
+        user_prompt: str,
+        layer_name: str,
+        rig_type: str,
+        pin_mapping: str,
+        description: str = "",
+        personality: str = ""
+    ) -> str:
         text = cls.CHARACTER_ANIMATION_TEMPLATE
         text = text.replace("__CHAR_NAME__", character_name)
         text = text.replace("__USER_PROMPT__", user_prompt)
         text = text.replace("__LAYER_NAME__", layer_name)
+        text = text.replace("__DESCRIPTION__", description or "N/A")
+        text = text.replace("__PERSONALITY__", personality or "N/A")
         text = text.replace("__RIG_TYPE__", rig_type)
         text = text.replace("__PIN_MAPPING__", str(pin_mapping))
         return text
