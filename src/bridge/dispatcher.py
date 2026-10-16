@@ -42,10 +42,17 @@ class AEBridgeDispatcher:
         mock_result = self.mock_bridge.execute(jsx_code, script_name_prefix=script_name_prefix)
 
         if active_mode == "live":
-            logger.info("Dispatching ExtendScript to Live After Effects COM session...")
+            logger.info("Attempting Live ExtendScript dispatch...")
+            # 1. Try COM
             live_result = self.live_bridge.execute_via_com(jsx_code)
-            live_result["saved_script_path"] = mock_result["saved_script_path"]
-            return live_result
+            if live_result.get("status") == "success":
+                live_result["saved_script_path"] = mock_result["saved_script_path"]
+                return live_result
+
+            # 2. Fallback to AfterFX.exe IPC
+            cli_result = self.live_bridge.execute_via_cli(mock_result["saved_script_path"])
+            cli_result["saved_script_path"] = mock_result["saved_script_path"]
+            return cli_result
 
         # Otherwise return mock simulation result
         return mock_result

@@ -15,14 +15,23 @@ from src.audio.lipsync import LipSyncEngine
 from src.bridge.dispatcher import AEBridgeDispatcher
 from src.worker.ollama_client import OllamaWorkerClient
 
+import sys
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 console = Console()
 
 
 def display_welcome():
     console.print(
         Panel.fit(
-            "[bold cyan]🎬 AfterBrain: AI Worker & MCP Server for Adobe After Effects[/bold cyan]\n"
-            "[green]Powered by local Ollama (qwen3:8b) & Windows COM[/green]\n"
+            "[bold cyan]AfterBrain: AI Worker & MCP Server for Adobe After Effects[/bold cyan]\n"
+            "[green]Powered by local Ollama (qwen3:8b) & Windows Automation[/green]\n"
             "Interactive Character Onboarding • Vision Landmark Perception • Lip-Sync • Motion Graphics",
             border_style="cyan"
         )
@@ -40,15 +49,15 @@ def show_status(dispatcher: AEBridgeDispatcher, worker: OllamaWorkerClient, memo
     table.add_column("Details", style="green")
 
     # Ollama
-    ollama_state = "Connected [green]✓[/green]" if w_status.get("ollama_connected") else "Disconnected [red]✗[/red]"
+    ollama_state = "Connected [green][OK][/green]" if w_status.get("ollama_connected") else "Disconnected [red][X][/red]"
     table.add_row("Ollama Server", ollama_state, f"Host: {settings.ollama_host}")
 
-    model_state = "Available [green]✓[/green]" if w_status.get("model_available") else "Missing [yellow]![/yellow]"
+    model_state = "Available [green][OK][/green]" if w_status.get("model_available") else "Missing [yellow][!][/yellow]"
     table.add_row("Target Model", model_state, f"Model: {settings.ollama_model}")
 
     # AE Bridge
     ae_mode = b_status.get("active_mode", "unknown")
-    ae_detail = "Live COM Connected [green]✓[/green]" if ae_mode == "live" else "Mock Simulator (Saving .jsx) [yellow]⚡[/yellow]"
+    ae_detail = "Live Session Connected [green][OK][/green]" if ae_mode == "live" else "Mock Simulator (Saving .jsx) [yellow][Offline][/yellow]"
     table.add_row("After Effects Bridge", ae_mode.upper(), ae_detail)
 
     # Characters in Memory
