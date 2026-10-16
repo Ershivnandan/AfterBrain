@@ -207,6 +207,8 @@
                     "• Animate backgrounds: 'Animate bg_tinku_garden with cinematic slow zoom'\n" +
                     "• Animate characters: 'Make @AlienBob wave and jump'\n" +
                     "• Control cameras & typography with natural language.", true);
+            }
+
             // 4. Copilot Suggestion Action Chips
             var chipsGroup = win.add("group");
             chipsGroup.orientation = "row";
