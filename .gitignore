@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+output_scripts/*.jsx
+data/character_registry.json
+!data/.gitkeep
+.pytest_cache/

@@ -1,0 +1,32 @@
+[project]
+name = "anmcp"
+version = "0.1.0"
+description = "MCP Server and AI Worker connecting local Qwen (via Ollama) to Adobe After Effects for character animation and motion graphics."
+authors = [{ name = "AnMCP Team" }]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.28.0",
+    "ollama>=0.4.0",
+    "pywin32>=308; sys_platform == 'win32'",
+    "pillow>=11.0.0",
+    "opencv-python>=4.10.0",
+    "numpy>=2.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    "httpx>=0.28.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
