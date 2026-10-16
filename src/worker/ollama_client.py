@@ -60,6 +60,8 @@ class OllamaWorkerClient:
                     layer_name=char_info.get("layer_name", character_name),
                     rig_type=char_info.get("rig_type", "puppet_pins"),
                     pin_mapping=str(char_info.get("pin_mapping", {})),
+                    description=char_info.get("description", ""),
+                    personality=char_info.get("personality", ""),
                 )
             else:
                 user_content = f"Character '{character_name}' requested. User prompt: {user_prompt}"

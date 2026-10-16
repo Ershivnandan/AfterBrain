@@ -15,18 +15,29 @@ def test_character_memory_crud(tmp_path: Path):
         name="Bob",
         image_path="test_bob.png",
         landmarks={"mouth": [0.5, 0.3]},
-        rig_type="puppet_pins"
+        rig_type="puppet_pins",
+        description="Blue cartoon boy with sneakers",
+        personality="Hyperactive and funny",
+        role="Protagonist"
     )
 
     assert len(memory.list_characters()) == 1
     char = memory.get_character("Bob")
     assert char is not None
     assert char["name"] == "Bob"
-    assert "Bob" in memory.get_prompt_context()
+    assert char["description"] == "Blue cartoon boy with sneakers"
+    assert char["personality"] == "Hyperactive and funny"
+    assert char["role"] == "Protagonist"
+    
+    prompt_ctx = memory.get_prompt_context()
+    assert "Bob" in prompt_ctx
+    assert "Hyperactive and funny" in prompt_ctx
+    assert "Blue cartoon boy with sneakers" in prompt_ctx
 
     # Re-instantiate from file to test persistence
     memory2 = CharacterMemory(registry_path=reg_file)
     assert len(memory2.list_characters()) == 1
+    assert memory2.get_character("Bob")["personality"] == "Hyperactive and funny"
 
 
 def test_rig_builder_produces_valid_jsx():

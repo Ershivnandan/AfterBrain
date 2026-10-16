@@ -45,12 +45,18 @@ class CharacterMemory:
         rig_type: str = "puppet_pins",
         pin_mapping: Optional[Dict[str, str]] = None,
         layer_name: Optional[str] = None,
+        description: Optional[str] = "",
+        personality: Optional[str] = "",
+        role: Optional[str] = "",
     ) -> Dict:
-        """Stores or updates a character in memory."""
+        """Stores or updates a character in memory with physical landmarks and personality context."""
         character_entry = {
             "name": name,
             "image_path": str(Path(image_path).resolve()),
             "layer_name": layer_name or Path(image_path).name,
+            "description": description or "",
+            "personality": personality or "",
+            "role": role or "",
             "rig_type": rig_type,
             "landmarks": landmarks,
             "pin_mapping": pin_mapping or {
@@ -86,13 +92,19 @@ class CharacterMemory:
         return False
 
     def get_prompt_context(self) -> str:
-        """Generates a concise markdown summary for the LLM system prompt."""
+        """Generates a rich markdown summary for the LLM system prompt including visual and acting traits."""
         if not self._registry:
             return "No characters currently registered in Character Memory."
 
         lines = ["### Registered Characters in After Effects Memory:"]
         for name, char in self._registry.items():
             lines.append(f"\n- **Character Name**: `{name}`")
+            if char.get("role"):
+                lines.append(f"  - **Role**: {char.get('role')}")
+            if char.get("description"):
+                lines.append(f"  - **Visual Description**: {char.get('description')}")
+            if char.get("personality"):
+                lines.append(f"  - **Personality & Acting Style**: {char.get('personality')}")
             lines.append(f"  - **Layer in AE**: `{char.get('layer_name')}`")
             lines.append(f"  - **Rig Type**: `{char.get('rig_type')}`")
             lines.append(f"  - **Available Pins / Joints to Animate**:")

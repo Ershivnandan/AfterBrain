@@ -47,12 +47,15 @@ def ae_get_system_status() -> str:
 def ae_register_character(
     image_path: str,
     character_name: str,
-    rig_type: str = "puppet_pins"
+    rig_type: str = "puppet_pins",
+    description: Optional[str] = "",
+    personality: Optional[str] = "",
+    role: Optional[str] = ""
 ) -> str:
     """
     Registers a new character image into After Effects.
     Uses computer vision to locate the mouth, eyes, hands, and joints,
-    automatically creates a Puppet Tool rig, and saves the character to memory.
+    automatically creates a Puppet Tool rig, and saves the character with personality traits to memory.
     """
     try:
         # 1. Vision Landmark Detection
@@ -70,7 +73,10 @@ def ae_register_character(
             image_path=image_path,
             landmarks=landmarks.to_dict()["landmarks"],
             rig_type=rig_type,
-            layer_name=character_name
+            layer_name=character_name,
+            description=description,
+            personality=personality,
+            role=role
         )
 
         response = {

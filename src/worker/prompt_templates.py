@@ -33,10 +33,12 @@ Request: __USER_PROMPT__
 
 Target character details:
 - Layer Name in AE: __LAYER_NAME__
+- Description: __DESCRIPTION__
+- Personality / Acting Style: __PERSONALITY__
 - Rig Type: __RIG_TYPE__
 - Available Pins/Joints: __PIN_MAPPING__
 
-Write complete, valid ExtendScript (.jsx) that animates this character according to the request. Ensure proper keyframing or expressions are applied. Wrap everything in an undo group.
+Write complete, valid ExtendScript (.jsx) that animates this character according to the request and reflects their personality and acting style. Ensure proper keyframing or expressions are applied. Wrap everything in an undo group.
 """
 
     GENERAL_ANIMATION_TEMPLATE = """The user wants to create or animate elements in After Effects.
@@ -52,11 +54,22 @@ Return the code wrapped in ```jsx ... ```.
         return cls.SYSTEM_TEMPLATE.replace("__CHARACTER_CONTEXT__", character_context)
 
     @classmethod
-    def get_character_prompt(cls, character_name: str, user_prompt: str, layer_name: str, rig_type: str, pin_mapping: str) -> str:
+    def get_character_prompt(
+        cls,
+        character_name: str,
+        user_prompt: str,
+        layer_name: str,
+        rig_type: str,
+        pin_mapping: str,
+        description: str = "",
+        personality: str = ""
+    ) -> str:
         text = cls.CHARACTER_ANIMATION_TEMPLATE
         text = text.replace("__CHAR_NAME__", character_name)
         text = text.replace("__USER_PROMPT__", user_prompt)
         text = text.replace("__LAYER_NAME__", layer_name)
+        text = text.replace("__DESCRIPTION__", description or "N/A")
+        text = text.replace("__PERSONALITY__", personality or "N/A")
         text = text.replace("__RIG_TYPE__", rig_type)
         text = text.replace("__PIN_MAPPING__", str(pin_mapping))
         return text

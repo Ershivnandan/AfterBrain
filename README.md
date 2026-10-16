@@ -49,11 +49,13 @@ Launch the rich interactive CLI:
 python -m src.cli
 ```
 Available interactive commands:
-- `status`: Check Ollama and After Effects connection status.
-- `register <image_path> <name>`: Ingests an image, scans landmarks, and builds the puppet rig.
-- `animate <name> <prompt>`: Prompts Qwen to animate the character (e.g., *"Make Hero wave his right hand and nod happily"*).
+- `register`: Launches the **Interactive Character Onboarding Wizard** (prompts for image path, drag-and-drop support, visual description, and personality traits).
+- `register <image_path> [name]`: Quick registration with image path and optional name.
+- `list`: View all registered characters, their roles, visual traits, and acting styles.
+- `animate <name> <prompt>`: Prompts Qwen to animate the character reflecting their personality (e.g., *"Make Hero wave his right hand enthusiastically and smile"*).
 - `lipsync <name> [audio_path or dialogue text]`: Generates audio-driven or syllable-based lip sync.
 - `generate <prompt>`: Creates kinetic typography, shape morphs, or camera animations.
+- `status`: Check Ollama and After Effects connection status.
 
 ---
 
